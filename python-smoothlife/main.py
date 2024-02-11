@@ -113,6 +113,71 @@ def main_pg():
                 i += 1
             time.sleep(0.1)
 
+def main_cl() -> None:
+    def display_grid(grid: np.ndarray) -> None:
+        # displays the grid to the terminal:
+        for i in range(grid.shape[1]):
+            for j in range(grid.shape[0]):
+                print(f"{brightness[floor(grid[j][i] * (len(brightness)-1))]}", end="")
+            print()
+        pass
+    
+    grid = np.random.rand(HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE)
+    nextGrid = np.zeros((HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE))
+
+    display_grid(grid)
+    
+    i: int = 0
+    
+    while True:
+
+        compute_delta_grid(grid, nextGrid)
+        for row, col in np.ndindex(grid.shape):
+            grid[row][col] = restrict(grid[row][col] + 0.05*nextGrid[row][col])
+        display_grid(grid)
+        print("displayed!", i)
+        i += 1
+        time.sleep(0.1)
+
+
+
+def main_cl_C() -> None:
+    import glob
+    import ctypes
+    libfile = glob.glob('./util.so')[0]
+    myLib = ctypes.CDLL(libfile)
+    myLib.update_grid.restype = ctypes.c_float
+    myLib.update_grid.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float32), np.ctypeslib.ndpointer(dtype=np.float32), ctypes.c_int]
+    
+    
+    
+    def display_grid(grid: np.ndarray) -> None:
+        # displays the grid to the terminal:
+        for i in range(grid.shape[1]):
+            for j in range(grid.shape[0]):
+                print(f"{brightness[floor(grid[j][i] * (len(brightness)-1))]}", end="")
+            print()
+        pass
+    grid = np.zeros((HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE), dtype=np.float32)
+    grid += np.random.rand(HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE)
+    nextGrid = np.zeros((HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE), dtype=np.float32)
+
+    display_grid(grid)
+    
+    i: int = 0
+    
+    while True:
+
+        # compute_delta_grid(grid, nextGrid)
+        # for row, col in np.ndindex(grid.shape):
+        #     grid[row][col] = restrict(grid[row][col] + 0.05*nextGrid[row][col])
+        
+        myLib.update_grid(WIDTH//CELL_SIZE, HEIGHT//CELL_SIZE, grid, nextGrid, r_a)
+        
+        display_grid(grid)
+        print("displayed!", i)
+        i += 1
+        time.sleep(0.1)
 
 if __name__ == "__main__":
     main_cl_C()
