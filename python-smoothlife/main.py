@@ -7,16 +7,16 @@ from typing import Tuple, List, Any
 from math import floor
 
 # PyGame constants:
-WIDTH: int = floor(600/1.5)
-HEIGHT: int = floor(600/1.5)
+WIDTH: int = floor(1000/1.5)
+HEIGHT: int = floor(800/1.5)
 CELL_SIZE: int = 10
 
 # Terminal constants:
-brightness = " ░▒▓█"
-# brightness = " .-=coaA@#"
+# brightness = " ░▒▓█"
+brightness = " .-=coaA@#"
 
 # Smoothlife constants:
-r_a: int = 9
+r_a: int = 11
 alpha_m: float = 0.147
 alpha_n: float = 0.028
 b_1: float = 0.278
@@ -146,39 +146,98 @@ def main_cl_C() -> None:
     import ctypes
     libfile = glob.glob('./util.so')[0]
     myLib = ctypes.CDLL(libfile)
-    myLib.update_grid.restype = ctypes.c_float
-    myLib.update_grid.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float32), np.ctypeslib.ndpointer(dtype=np.float32), ctypes.c_int]
+    
+    array_double = np.ctypeslib.ndpointer(dtype=np.float64,ndim=1)
+    
+    myLib.update_grid.restype = None
+    myLib.update_grid.argtypes = [ctypes.c_int, ctypes.c_int, array_double, array_double, ctypes.c_int]
     
     
     
     def display_grid(grid: np.ndarray) -> None:
         # displays the grid to the terminal:
-        for i in range(grid.shape[1]):
-            for j in range(grid.shape[0]):
-                print(f"{brightness[floor(grid[j][i] * (len(brightness)-1))]}", end="")
+        print('-'*80)
+        for i in range(WIDTH  // CELL_SIZE):
+            for j in range(HEIGHT // CELL_SIZE):
+                print(f"{brightness[floor(grid[j * (WIDTH//CELL_SIZE) + i] * (len(brightness)-1))]}", end="")
+                # print(grid[j * (WIDTH//CELL_SIZE) + i])
             print()
-        pass
-    grid = np.zeros((HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE), dtype=np.float32)
-    grid += np.random.rand(HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE)
-    nextGrid = np.zeros((HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE), dtype=np.float32)
+        print('-'*80)
+    
+    grid = np.array([0 for _ in range((HEIGHT // CELL_SIZE )* (WIDTH  // CELL_SIZE))], dtype=np.float64)
+    grid += np.random.rand(*grid.shape)
+    
+    nextGrid = np.zeros_like(grid.shape, dtype=np.float64)
 
     display_grid(grid)
-    
+    # exit()
     i: int = 0
     
-    while True:
-
-        # compute_delta_grid(grid, nextGrid)
-        # for row, col in np.ndindex(grid.shape):
-        #     grid[row][col] = restrict(grid[row][col] + 0.05*nextGrid[row][col])
-        
+    while True:        
         myLib.update_grid(WIDTH//CELL_SIZE, HEIGHT//CELL_SIZE, grid, nextGrid, r_a)
-        
         display_grid(grid)
-        print("displayed!", i)
+        
+        # print("displayed!", i)
         i += 1
-        time.sleep(0.1)
+        time.sleep(0.05)
+
+
+
+def main_pg_C() -> None:
+    
+    
+    # initialise pygame
+    pg.init()
+    
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    screen.fill((30, 30, 30))
+    pg.display.flip()
+    
+    # import C functions
+    import glob
+    import ctypes
+    libfile = glob.glob('./util.so')[0]
+    myLib = ctypes.CDLL(libfile)
+    
+    array_double = np.ctypeslib.ndpointer(dtype=np.float64,ndim=1)
+    
+    myLib.update_grid.restype = None
+    myLib.update_grid.argtypes = [ctypes.c_int, ctypes.c_int, array_double, array_double, ctypes.c_int]
+    
+    
+    
+    def display_grid(grid: np.ndarray) -> None:
+        for i in range(WIDTH  // CELL_SIZE):
+            for j in range(HEIGHT // CELL_SIZE):
+                colour = grid[j*(WIDTH  // CELL_SIZE) + i]
+                if colour < 0: colour = 0
+                if colour > 1: colour = 1
+                colour = (colour*255, colour*255, colour*255)
+                # print(colour)
+                pg.draw.rect(screen, colour, (i*CELL_SIZE, j*CELL_SIZE, CELL_SIZE-1, CELL_SIZE-1))
+        pg.display.update()
+                # print(f"{brightness[floor(grid[j * (WIDTH//CELL_SIZE) + i] * (len(brightness)-1))]}", end="")
+
+        # print('-'*80)
+    
+    grid = np.array([0 for _ in range((HEIGHT // CELL_SIZE )* (WIDTH  // CELL_SIZE))], dtype=np.float64)
+    grid += np.random.rand(*grid.shape)
+    
+    nextGrid = np.zeros_like(grid.shape, dtype=np.float64)
+
+    display_grid(grid)
+    # exit()
+    i: int = 0
+    
+    while True:        
+        myLib.update_grid(WIDTH//CELL_SIZE, HEIGHT//CELL_SIZE, grid, nextGrid, r_a)
+        display_grid(grid)
+        
+        # print("displayed!", i)
+        i += 1
+        time.sleep(0.025)
+
 
 if __name__ == "__main__":
-    main_cl_C()
+    main_pg_C()
     
