@@ -4,14 +4,19 @@ import numpy as np
 import pygame as pg
 
 from typing import Tuple, List, Any
+from math import floor
 
 # PyGame constants:
-WIDTH: int = 80
-HEIGHT: int = 60
-CELL_SIZE: int = 1
+WIDTH: int = floor(600/1.5)
+HEIGHT: int = floor(600/1.5)
+CELL_SIZE: int = 10
+
+# Terminal constants:
+brightness = " ░▒▓█"
+# brightness = " .-=coaA@#"
 
 # Smoothlife constants:
-r_a: int = 12
+r_a: int = 9
 alpha_m: float = 0.147
 alpha_n: float = 0.028
 b_1: float = 0.278
@@ -38,14 +43,16 @@ def display_grid(screen: pg.Surface, grid: np.ndarray) -> None:
         colour = grid[row][col]
         if colour < 0: colour = 0
         if colour > 1: colour = 1
-        colour = (colour, colour, colour)
-        print(colour)
-        pg.draw.rect(screen, colour, (col*CELL_SIZE, row*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        colour = (colour*255, colour*255, colour*255)
+        # print(colour)
+        pg.draw.rect(screen, colour, (col*CELL_SIZE, row*CELL_SIZE, CELL_SIZE-1, CELL_SIZE-1))
     pg.display.update()
 
-def update_map(grid: np.ndarray, nextGrid: np.ndarray) -> None:
-    for xi in range(WIDTH): 
-        for yi in range(HEIGHT):
+def compute_delta_grid(grid: np.ndarray, nextGrid: np.ndarray) -> None:
+    width = WIDTH //CELL_SIZE
+    height = HEIGHT // CELL_SIZE
+    for xi in range(width): 
+        for yi in range(height):
             m: float = 0  # the integral value
             M: int = 0  # the scaling factor M
             n: float = 0  # the integral value
@@ -54,17 +61,23 @@ def update_map(grid: np.ndarray, nextGrid: np.ndarray) -> None:
             
             for dx in range(-(r_a-1), r_a, 1):
                 for dy in range(-(r_a-1), r_a, 1):
-                    x = (((xi+dx)%WIDTH + WIDTH)%WIDTH) // CELL_SIZE
-                    y = (((yi+dy)%HEIGHT + HEIGHT)%HEIGHT) // CELL_SIZE
+                    x = (((xi+dx)%width + width)%width)
+                    y = (((yi+dy)%height + height)%height)
                     if dx**2 + dy**2 <= r_i**2:
                         m += grid[y][x]
                         M += 1
-                    else:
+                    elif dx**2 + dy**2 <= r_a**2:
                         n += grid[y][x]
                         N += 1
             m /= M
             n /= N
             nextGrid[yi][xi] = 2*s(n,m) - 1
+
+
+def restrict(val: float, lower: float=0, upper: float=1) -> float:
+    if val < lower: return lower
+    if val > upper: return upper
+    return val
 
 
 def main_pg():
@@ -76,9 +89,10 @@ def main_pg():
     nextGrid = np.zeros((HEIGHT // CELL_SIZE, WIDTH  // CELL_SIZE))
     screen.fill((30, 30, 30))
     pg.display.flip()
-    
+    display_grid(screen, grid)
     
     running = False
+    i: int = 0
     
     while True:
         for event in pg.event.get():
@@ -91,14 +105,15 @@ def main_pg():
                     display_grid(screen, grid)
                     
             if running:
-                update_map(grid, nextGrid)
-                grid, nextGrid = nextGrid, grid
+                compute_delta_grid(grid, nextGrid)
+                for row, col in np.ndindex(grid.shape):
+                    grid[row][col] = restrict(grid[row][col] + 0.05*nextGrid[row][col])
                 display_grid(screen, grid)
-            time.sleep(0.01)
+                print("displayed!", i)
+                i += 1
+            time.sleep(0.1)
 
-def main_cl() -> None:
-    # todo: implement terminal-based display
-    pass
+
 if __name__ == "__main__":
-    main_pg()
+    main_cl_C()
     
