@@ -12,8 +12,7 @@ HEIGHT: int = floor(800/1.5)
 CELL_SIZE: int = 10
 
 # Terminal constants:
-# brightness = " ░▒▓█"
-brightness = " .-=coaA@#"
+brightness = " ░▒▓█"
 
 # Smoothlife constants:
 r_a: int = 11
