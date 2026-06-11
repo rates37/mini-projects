@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -30,7 +31,7 @@ func main() {
 		}
 		args := strings.Split(input, " ")
 
-		// check for exit command or empty input:
+		// check for exit command:
 		if args[0] == "exit" {
 			if len(args) > 1 {
 				// return exit code if provided:
@@ -38,8 +39,8 @@ func main() {
 				// check args[1] is numeric:
 				var exitCode int
 				if _, err := fmt.Sscanf(args[1], "%d", &exitCode); err != nil {
-					fmt.Println("Invalid exit code, exiting with code 0")
-					os.Exit(0)
+					fmt.Println("Invalid exit code, exiting with code 1")
+					os.Exit(1)
 				} else {
 					// convert to int and exit with code:
 					fmt.Sscanf(args[1], "%d", &exitCode)
@@ -50,6 +51,16 @@ func main() {
 			break
 		}
 
-		fmt.Fprintln(os.Stdout, "🐢 💬:", input)
+		// prepare to run the command:
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+
+		// run the command:
+		fmt.Fprintln(os.Stdout, "🐢: running command: `", input, "`")
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintln(os.Stderr, "🐢: error:", err)
+		}
 	}
 }
