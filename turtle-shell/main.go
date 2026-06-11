@@ -51,6 +51,36 @@ func main() {
 			break
 		}
 
+		// handle cd command since it's not a separate process:
+		if args[0] == "cd" {
+			if len(args) == 1 {
+				// change to home directory:
+				fmt.Println("Changing to home directory")
+				homeDir, err := os.UserHomeDir()
+				if err != nil {
+					fmt.Println("Error getting home directory:", err)
+					continue
+				}
+				if err := os.Chdir(homeDir); err != nil {
+					fmt.Println("Error changing directory:", err)
+				}
+			} else {
+				// check destination directory exists:
+				dest := args[1]
+				if _, err := os.Stat(dest); os.IsNotExist(err) {
+					fmt.Printf("Directory '%s' does not exist\n", dest)
+				} else {
+					// change to dest:
+					// fmt.Printf("Changing to directory: %s\n", dest)
+
+					if err := os.Chdir(dest); err != nil {
+						fmt.Printf("Error changing to directory '%s': %v\n", dest, err)
+					}
+				}
+			}
+			continue
+		}
+
 		// prepare to run the command:
 		cmd := exec.Command(args[0], args[1:]...)
 		cmd.Stdout = os.Stdout
