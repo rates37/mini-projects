@@ -13,6 +13,11 @@ func main() {
 		fmt.Print("🐢 < $ ")
 		input, err := reader.ReadString('\n')
 		if err != nil {
+			// handle ctrl + D:
+			if err.Error() == "EOF" {
+				fmt.Println("\nGoodbye!")
+				break
+			}
 			fmt.Println("Error reading input:", err)
 			continue
 		}
